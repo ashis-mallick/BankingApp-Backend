@@ -1,13 +1,12 @@
 package com.ashis.controllers;
 
+import com.ashis.dto.AccountBalanceRespnse;
+import com.ashis.dto.AccountDto;
 import com.ashis.dto.TransactionDto;
 import com.ashis.dto.TransactionResponseDto;
 import com.ashis.services.TransactionService;
 import lombok.AllArgsConstructor;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/banking")
@@ -30,6 +29,11 @@ public class BankTransactions {
     public TransactionResponseDto withdrawAmount(@RequestBody TransactionDto transactionDto){
         return transactionService.withdrawAmount(transactionDto);
 
+    }
+
+    @GetMapping("/check")
+    public AccountBalanceRespnse checkBalance(@RequestBody AccountDto accountDto){
+        return  transactionService.checkBalance(accountDto);
     }
 
 

@@ -1,5 +1,7 @@
 package com.ashis.services;
 
+import com.ashis.dto.AccountBalanceRespnse;
+import com.ashis.dto.AccountDto;
 import com.ashis.dto.TransactionDto;
 import com.ashis.dto.TransactionResponseDto;
 import com.ashis.entities.Account;
@@ -9,6 +11,7 @@ import com.ashis.repositories.TransactionRepository;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
@@ -49,7 +52,8 @@ public class TransactionService {
                     account.getCustomerAccountNo()
                     ,savedCreditTransaction.getCustomer().getCustomerFirstName()+" "+savedCreditTransaction.getCustomer().getCustomerLastName(),
                     savedCreditTransaction.getTransactionId(),
-                    "Amount Credited Successfully");
+                    "Amount Credited Successfully",
+                    account.getTotalAmount());
 
         } else{
 
@@ -69,7 +73,8 @@ public class TransactionService {
                     account.getCustomerAccountNo()
                     ,savedCreditTransaction.getCustomer().getCustomerFirstName()+" "+savedCreditTransaction.getCustomer().getCustomerLastName(),
                     savedCreditTransaction.getTransactionId(),
-                    "Amount Credited Successfully");
+                    "Amount Credited Successfully",
+                    account.getTotalAmount());
         }
 
 
@@ -96,21 +101,21 @@ public class TransactionService {
 
         if(account.getTotalAmount().compareTo(transactionDto.getAmount())<0){
             withdrawal.setCustomer(account.getCustomer());
-            withdrawal.setAmount(transactionDto.getAmount());
             withdrawal.setTransactionId(generateTransationId());
             withdrawal.setTransactionType(transactionDto.getTransactionType());
             withdrawal.setDescription("Withdrawal");
             withdrawal.setStatus("FAILED");
 
             Transactions savedDebitTransaction=transactionRepository.save(withdrawal);
-            account.setTotalAmount(account.getTotalAmount().subtract(transactionDto.getAmount()));
+//            account.setTotalAmount(account.getTotalAmount().subtract(transactionDto.getAmount()));
 
 
             return new TransactionResponseDto(
                     transactionDto.getCustomerAccountNo()
                     ,savedDebitTransaction.getCustomer().getCustomerFirstName()+" "+savedDebitTransaction.getCustomer().getCustomerLastName(),
                     savedDebitTransaction.getTransactionId(),
-                    "Amount Withdrawal Failed");
+                    "Amount Withdrawal Failed",
+                    account.getTotalAmount());
 
 
 
@@ -130,10 +135,22 @@ public class TransactionService {
                     transactionDto.getCustomerAccountNo()
                     ,savedDebitTransaction.getCustomer().getCustomerFirstName()+" "+savedDebitTransaction.getCustomer().getCustomerLastName(),
                     savedDebitTransaction.getTransactionId(),
-                    "Amount Withdrawal Successful");
+                    "Amount Withdrawal Successful",
+                    account.getTotalAmount());
 
         }
 
 
+    }
+
+    public AccountBalanceRespnse checkBalance(AccountDto accountDto) {
+
+
+        Account account = accountRepository.findByCustomerAccountNo
+                        (accountDto.getCustomerAccountNo())
+                .orElseThrow(() -> new RuntimeException("Account not exist"));
+
+
+        return new AccountBalanceRespnse(accountDto.getCustomerAccountNo(),account.getTotalAmount(), LocalDate.now());
     }
 }
