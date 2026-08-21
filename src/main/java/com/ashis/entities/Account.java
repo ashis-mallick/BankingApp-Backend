@@ -2,6 +2,7 @@ package com.ashis.entities;
 
 import jakarta.persistence.*;
 import lombok.Data;
+import lombok.ToString;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -17,6 +18,7 @@ public class Account {
     @OneToOne
     @MapsId
     @JoinColumn(name = "customer_id")
+    @ToString.Exclude
     private Customer customer;
 
     @Column(unique = true, nullable = false)

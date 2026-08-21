@@ -1,9 +1,6 @@
 package com.ashis.services;
 
-import com.ashis.dto.AccountBalanceRespnse;
-import com.ashis.dto.AccountDto;
-import com.ashis.dto.TransactionDto;
-import com.ashis.dto.TransactionResponseDto;
+import com.ashis.dto.*;
 import com.ashis.entities.Account;
 import com.ashis.entities.Transactions;
 import com.ashis.repositories.AccountRepository;
@@ -16,6 +13,7 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.UUID;
+import java.util.stream.Stream;
 
 @Service
 @AllArgsConstructor
@@ -152,5 +150,28 @@ public class TransactionService {
 
 
         return new AccountBalanceRespnse(accountDto.getCustomerAccountNo(),account.getTotalAmount(), LocalDate.now());
+    }
+
+    public List<StatementDto> checkStatement(TransactionDto transactionDto) {
+        Account account = accountRepository.findByCustomerAccountNo
+                        (transactionDto.getCustomerAccountNo())
+                .orElseThrow(() -> new RuntimeException("Account not found"));
+        List<Transactions> transactions = transactionRepository.findByCustomer(account.getCustomer());
+
+        List<StatementDto> statementList = transactions.stream().map(t ->
+        {
+            StatementDto stmt = new StatementDto();
+            stmt.setCustomerId(t.getCustomer().getCustomerId());
+            stmt.setCustomerTransactionId(t.getTransactionId());
+            stmt.setAmount(t.getAmount());
+            stmt.setTransactionDescription(t.getDescription());
+            stmt.setTransactionType(t.getTransactionType());
+            stmt.setTransactionStatus(t.getStatus());
+
+            return stmt;
+
+        }).toList();
+
+        return statementList;
     }
 }

@@ -3,6 +3,7 @@ package com.ashis.entities;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;
+import lombok.ToString;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -35,9 +36,13 @@ public class Customer {
     private LocalDate customerDateOfBirth;
 
     @OneToMany(mappedBy = "customer")
+    @ToString.Exclude
     private List<Transactions> transactions;
 
     private LocalDateTime customerCreatedAt;
+
+
+
 
 
 
