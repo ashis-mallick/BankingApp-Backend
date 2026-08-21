@@ -5,12 +5,14 @@ import com.ashis.entities.Account;
 import com.ashis.entities.Transactions;
 import com.ashis.repositories.AccountRepository;
 import com.ashis.repositories.TransactionRepository;
+import com.ashis.utils.TransactionType;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.Date;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Stream;
@@ -174,4 +176,87 @@ public class TransactionService {
 
         return statementList;
     }
+
+
+    public TransferResponseDto transferBalance(TransferBalanceDto transferBalanceDto){
+
+        Account senderAccount = accountRepository.findByCustomerAccountNo
+                (transferBalanceDto.getSenderAccountNo()).orElseThrow(() ->
+                new RuntimeException("Sender doesn't exist"));
+        Account receiverAccount = accountRepository.findByCustomerAccountNo
+                (transferBalanceDto.getReceiverAccountNo()).orElseThrow(() ->
+                new RuntimeException("Receiver doesn't exist"));
+
+        if(senderAccount.getTotalAmount().compareTo(transferBalanceDto.getAmount())>=0){
+            Transactions sendAmount= new Transactions();
+
+            sendAmount.setAmount(transferBalanceDto.getAmount());
+            sendAmount.setCustomer(receiverAccount.getCustomer());
+            sendAmount.setTransactionId(generateTransationId());
+            sendAmount.setDescription(transferBalanceDto.getDescription());
+            sendAmount.setStatus("SUCCESS");
+            sendAmount.setTransactionType(TransactionType.CREDIT);
+
+
+            Transactions sent = transactionRepository.save(sendAmount);
+
+            // added amount to receiver account
+            receiverAccount.setTotalAmount(receiverAccount.getTotalAmount().add(transferBalanceDto.getAmount()));
+            accountRepository.save(receiverAccount);
+
+            // deduct amount from sender account
+            senderAccount.setTotalAmount(senderAccount.getTotalAmount().subtract(transferBalanceDto.getAmount()));
+            accountRepository.save(senderAccount);
+
+
+            return new TransferResponseDto(
+                    transferBalanceDto.getSenderAccountNo(),
+                    transferBalanceDto.getReceiverAccountNo(),
+                    transferBalanceDto.getAmount(),
+                    transferBalanceDto.getDescription(),
+                    sent.getStatus(),
+                    LocalDate.now()
+
+            );
+
+
+
+
+
+
+        }else {
+            Transactions sendAmount= new Transactions();
+
+            sendAmount.setAmount(transferBalanceDto.getAmount());
+            sendAmount.setCustomer(receiverAccount.getCustomer());
+            sendAmount.setTransactionId(generateTransationId());
+            sendAmount.setDescription(transferBalanceDto.getDescription());
+            sendAmount.setStatus("FAILED");
+            sendAmount.setTransactionType(TransactionType.CREDIT);
+
+            Transactions sent = transactionRepository.save(sendAmount);
+
+            return new TransferResponseDto(
+                    transferBalanceDto.getSenderAccountNo(),
+                    transferBalanceDto.getReceiverAccountNo(),
+                    transferBalanceDto.getAmount(),
+                    transferBalanceDto.getDescription(),
+                    sent.getStatus(),
+                    LocalDate.now()
+
+            );
+
+
+
+
+        }
+
+
+
+
+    }
+
+
+
+
 }
