@@ -4,8 +4,11 @@ import com.ashis.dto.RegisterDto;
 import com.ashis.dto.RegisterResponseDto;
 import com.ashis.entities.Account;
 import com.ashis.entities.Customer;
+import com.ashis.entities.User;
 import com.ashis.repositories.AccountRepository;
 import com.ashis.repositories.RegisterRepository;
+import com.ashis.repositories.UserRepository;
+import com.ashis.utils.Roles;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -15,10 +18,11 @@ import java.util.Random;
 
 @Service
 @RequiredArgsConstructor
-public class BankService {
+public class AuthService {
 
     private final RegisterRepository registerRepository;
     private final AccountRepository accountRepository;
+    private  final UserRepository userRepository;
 
 
     public RegisterResponseDto saveRegisterData(RegisterDto registerDto){
@@ -47,11 +51,23 @@ public class BankService {
         Account account = new Account();
         account.setCustomer(customer);
         account.setCustomerAccountNo(accountNo);
-        account.setCustomerPassword(registerDto.getCustomerPassword());
         account.setCustomerCreatedAt(LocalDateTime.now());
         account.setTotalAmount(BigDecimal.ZERO);
 
         Account savedCredential = accountRepository.save(account);
+
+      // set user
+
+        User user = new User();
+
+        user.setRole(Roles.CUSTOMER);
+        user.setUsername(registerDto.getCustomerFirstName()+" "+registerDto.getCustomerLastName());
+        user.setCreatedAt(LocalDateTime.now());
+        user.setCustomer(savedCredential.getCustomer());
+
+
+        User savedUser = userRepository.save(user);
+
 
 
         return new RegisterResponseDto(
@@ -59,7 +75,8 @@ public class BankService {
                 ,savedCustomer.getCustomerLastName()
                 ,savedCredential.getCustomerAccountNo(),
                 savedCustomer.getCustomerId(),
-                "Registration Successfull"
+                "Registration Successfull",
+                savedUser.getUserId()
                 );
 
 

@@ -12,14 +12,12 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.Date;
 import java.util.List;
 import java.util.UUID;
-import java.util.stream.Stream;
 
 @Service
 @AllArgsConstructor
-public class TransactionService {
+public class CustomerService {
 
     private final TransactionRepository transactionRepository;
     private final AccountRepository accountRepository;
@@ -44,7 +42,7 @@ public class TransactionService {
 
             deposite.setTransactionId(generateTransationId());
             deposite.setCustomer(account.getCustomer());
-            deposite.setTransactionType(transactionDto.getTransactionType());
+            deposite.setTransactionType(TransactionType.DEPOSIT);
 
             Transactions savedCreditTransaction = transactionRepository.save(deposite);
             accountRepository.save(account);
@@ -59,7 +57,7 @@ public class TransactionService {
 
             deposite.setAmount(transactionDto.getAmount());
             deposite.setDescription(transactionDto.getTransactionDescription());
-            deposite.setTransactionType(transactionDto.getTransactionType());
+            deposite.setTransactionType(TransactionType.DEPOSIT);
             deposite.setTransactionId(generateTransationId());
             deposite.setCustomer(account.getCustomer());
             deposite.setStatus("SUCCESS");
@@ -102,7 +100,7 @@ public class TransactionService {
         if(account.getTotalAmount().compareTo(transactionDto.getAmount())<0){
             withdrawal.setCustomer(account.getCustomer());
             withdrawal.setTransactionId(generateTransationId());
-            withdrawal.setTransactionType(transactionDto.getTransactionType());
+            withdrawal.setTransactionType(TransactionType.WITHDRAW);
             withdrawal.setDescription("Withdrawal");
             withdrawal.setStatus("FAILED");
 
@@ -123,7 +121,7 @@ public class TransactionService {
             withdrawal.setCustomer(account.getCustomer());
             withdrawal.setAmount(transactionDto.getAmount());
             withdrawal.setTransactionId(generateTransationId());
-            withdrawal.setTransactionType(transactionDto.getTransactionType());
+            withdrawal.setTransactionType(TransactionType.WITHDRAW);
             withdrawal.setDescription("Withdrawal");
             withdrawal.setStatus("SUCCESS");
 
@@ -167,7 +165,7 @@ public class TransactionService {
             stmt.setCustomerTransactionId(t.getTransactionId());
             stmt.setAmount(t.getAmount());
             stmt.setTransactionDescription(t.getDescription());
-            stmt.setTransactionType(t.getTransactionType());
+            stmt.setTransactionType(TransactionType.CHECK);
             stmt.setTransactionStatus(t.getStatus());
 
             return stmt;
@@ -195,7 +193,7 @@ public class TransactionService {
             sendAmount.setTransactionId(generateTransationId());
             sendAmount.setDescription(transferBalanceDto.getDescription());
             sendAmount.setStatus("SUCCESS");
-            sendAmount.setTransactionType(TransactionType.CREDIT);
+            sendAmount.setTransactionType(TransactionType.TRANSFER);
 
 
             Transactions sent = transactionRepository.save(sendAmount);
@@ -232,7 +230,7 @@ public class TransactionService {
             sendAmount.setTransactionId(generateTransationId());
             sendAmount.setDescription(transferBalanceDto.getDescription());
             sendAmount.setStatus("FAILED");
-            sendAmount.setTransactionType(TransactionType.CREDIT);
+            sendAmount.setTransactionType(TransactionType.TRANSFER);
 
             Transactions sent = transactionRepository.save(sendAmount);
 

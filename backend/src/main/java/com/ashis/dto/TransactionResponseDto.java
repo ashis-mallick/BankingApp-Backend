@@ -12,7 +12,9 @@ public class TransactionResponseDto {
 
     private String customerAccountNo;
     private String CustomerName;
+
     private String transactionId;
+
     private String status;
 
     private BigDecimal availableBalance;

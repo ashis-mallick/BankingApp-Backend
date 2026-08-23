@@ -14,6 +14,7 @@ public class RegisterResponseDto {
     private String customerAccountNo;
     private Long customerId;
     private  String message;
+    private  Long userId;
 
 
 

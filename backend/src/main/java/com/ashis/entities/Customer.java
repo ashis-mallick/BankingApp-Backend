@@ -1,7 +1,6 @@
 package com.ashis.entities;
 
 import jakarta.persistence.*;
-import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 import lombok.ToString;
 
@@ -14,8 +13,7 @@ import java.util.List;
 public class Customer {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name ="customer_id")
+    @GeneratedValue(strategy = GenerationType.AUTO)
     private Long customerId;
 
     @Column(nullable = false)
@@ -25,26 +23,29 @@ public class Customer {
     private String customerLastName;
 
     @Column(nullable = false)
-    private  String customerAddress;
+    private String customerAddress;
 
-    @NotNull
+    @Column(nullable = false, unique = true)
     private String customerEmail;
-    @NotNull
+
+    @Column(nullable = false, unique = true)
     private String customerPhone;
 
     @Column(nullable = false)
-    private LocalDate customerDateOfBirth;
+    private LocalDate CustomerDateOfBirth;
+
+    private LocalDateTime customerCreatedAt;
+
+    @OneToOne(mappedBy = "customer", cascade = CascadeType.ALL)
+    @ToString.Exclude
+    private User user;
+
+    @OneToOne(mappedBy = "customer", cascade = CascadeType.ALL)
+    @ToString.Exclude
+    private Account account;
 
     @OneToMany(mappedBy = "customer")
     @ToString.Exclude
     private List<Transactions> transactions;
-
-    private LocalDateTime customerCreatedAt;
-
-
-
-
-
-
 
 }

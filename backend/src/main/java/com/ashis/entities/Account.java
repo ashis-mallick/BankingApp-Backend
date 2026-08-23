@@ -1,5 +1,6 @@
 package com.ashis.entities;
 
+import com.ashis.utils.AccountStatus;
 import jakarta.persistence.*;
 import lombok.Data;
 import lombok.ToString;
@@ -24,13 +25,15 @@ public class Account {
     @Column(unique = true, nullable = false)
     private String customerAccountNo;
 
-    @Column(nullable = false)
-    private String customerPassword;
 
     @Column(nullable = false)
     private LocalDateTime customerCreatedAt;
 
     private BigDecimal totalAmount;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private AccountStatus status = AccountStatus.ACTIVE;
 
 
 
