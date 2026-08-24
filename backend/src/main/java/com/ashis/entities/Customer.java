@@ -1,5 +1,6 @@
 package com.ashis.entities;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.Data;
 import lombok.ToString;
@@ -38,14 +39,17 @@ public class Customer {
 
     @OneToOne(mappedBy = "customer", cascade = CascadeType.ALL)
     @ToString.Exclude
+    @JsonIgnore
     private User user;
 
     @OneToOne(mappedBy = "customer", cascade = CascadeType.ALL)
     @ToString.Exclude
+    @JsonIgnore
     private Account account;
 
     @OneToMany(mappedBy = "customer")
     @ToString.Exclude
+    @JsonIgnore
     private List<Transactions> transactions;
 
 }

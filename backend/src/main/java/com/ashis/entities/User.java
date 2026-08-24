@@ -1,6 +1,7 @@
 package com.ashis.entities;
 
 import com.ashis.utils.Roles;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.Data;
 import lombok.ToString;
@@ -34,5 +35,6 @@ public class User {
     @OneToOne
     @JoinColumn(name = "customer_id")
     @ToString.Exclude
+    @JsonIgnore
     private Customer customer;
 }

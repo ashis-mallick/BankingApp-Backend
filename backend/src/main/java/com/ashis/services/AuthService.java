@@ -64,6 +64,7 @@ public class AuthService {
         user.setUsername(registerDto.getCustomerFirstName()+" "+registerDto.getCustomerLastName());
         user.setCreatedAt(LocalDateTime.now());
         user.setCustomer(savedCredential.getCustomer());
+        user.setPassword(registerDto.getCustomerPassword());
 
 
         User savedUser = userRepository.save(user);
@@ -75,7 +76,7 @@ public class AuthService {
                 ,savedCustomer.getCustomerLastName()
                 ,savedCredential.getCustomerAccountNo(),
                 savedCustomer.getCustomerId(),
-                "Registration Successfull",
+                "Registered Successfully",
                 savedUser.getUserId()
                 );
 
