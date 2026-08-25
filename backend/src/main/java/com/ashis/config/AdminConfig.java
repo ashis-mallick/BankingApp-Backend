@@ -6,6 +6,7 @@ import com.ashis.utils.Roles;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.time.LocalDateTime;
 
@@ -14,6 +15,7 @@ import java.time.LocalDateTime;
 public class AdminConfig {
 
     private  final UserRepository userRepository;
+    private final PasswordEncoder passwordEncoder;
 
     @PostConstruct
     public void createAdmin(){
@@ -24,7 +26,7 @@ public class AdminConfig {
 
             User user = new User();
             user.setUsername("admin");
-            user.setPassword("admin123");
+            user.setPassword(passwordEncoder.encode("admin123"));
             user.setRole(Roles.ADMIN);
             user.setCreatedAt(LocalDateTime.now());
 

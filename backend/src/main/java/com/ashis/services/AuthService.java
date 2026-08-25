@@ -10,6 +10,7 @@ import com.ashis.repositories.RegisterRepository;
 import com.ashis.repositories.UserRepository;
 import com.ashis.utils.Roles;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -23,6 +24,7 @@ public class AuthService {
     private final RegisterRepository registerRepository;
     private final AccountRepository accountRepository;
     private  final UserRepository userRepository;
+    private final PasswordEncoder passwordEncoder;
 
 
     public RegisterResponseDto saveRegisterData(RegisterDto registerDto){
@@ -61,10 +63,12 @@ public class AuthService {
         User user = new User();
 
         user.setRole(Roles.CUSTOMER);
-        user.setUsername(registerDto.getCustomerFirstName()+" "+registerDto.getCustomerLastName());
+        user.setUsername(registerDto.getUserId());
         user.setCreatedAt(LocalDateTime.now());
         user.setCustomer(savedCredential.getCustomer());
-        user.setPassword(registerDto.getCustomerPassword());
+
+        String encoded = passwordEncoder.encode(registerDto.getCustomerPassword());
+        user.setPassword(encoded);
 
 
         User savedUser = userRepository.save(user);

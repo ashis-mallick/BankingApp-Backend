@@ -19,7 +19,11 @@ public class RegisterDto {
 
     private LocalDate customerDateOfBirth;
 
+    private String userId;
+
     private String customerPassword;
+
+
 
 
 
