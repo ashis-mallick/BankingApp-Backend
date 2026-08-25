@@ -16,7 +16,7 @@ public class AuthController {
         this.authService = authService;
     }
 
-    private AuthService authService;
+    private final AuthService authService;
 
 
     @PostMapping("/register")

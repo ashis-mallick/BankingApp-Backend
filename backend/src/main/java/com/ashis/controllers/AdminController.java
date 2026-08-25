@@ -1,8 +1,10 @@
 package com.ashis.controllers;
 
 
-import com.ashis.dto.CustomerStatusDto;
+import com.ashis.dto.*;
 import com.ashis.entities.Customer;
+import com.ashis.entities.Transactions;
+import com.ashis.repositories.TransactionRepository;
 import com.ashis.services.AdminService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
@@ -15,6 +17,7 @@ import java.util.List;
 public class AdminController {
 
     private  final  AdminService adminService;
+    private final TransactionRepository transactionRepository;
 
     @GetMapping("/view")
     public List<Customer> viewAllCustomers(){
@@ -38,25 +41,30 @@ public class AdminController {
 
 
 
-    @PostMapping("/change-block-status")
-    public  void changeBlockStatus(){
-
-
-    }
 
     @PostMapping("/change-password")
-    public void changeCustomerPassword(){
+    public ChangePasswordDto changeCustomerPassword(@RequestBody AccountDto accountDto){
+        return adminService.changePassword(accountDto);
 
     }
 
 
     @PostMapping("/delete-customer")
-    public void deleteCustomer(){
+    public AccountDeletedDto deleteCustomer( @RequestBody  AccountDto accountDto){
+
+      return  adminService.deleteCustomer(accountDto);
 
     }
 
 
 
+    @GetMapping("/view-transactions")
+    public List<Transactions> viewAllTransactions(){
+
+      return  adminService.viewAllTransactions();
+
+
+    }
 
 
 }

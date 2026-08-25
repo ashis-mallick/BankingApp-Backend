@@ -12,6 +12,7 @@ import java.util.Date;
 public class TransferResponseDto {
 
     private  String senderAccountNo;
+
     private String recieverAccountNo;
 
     private BigDecimal amount;
