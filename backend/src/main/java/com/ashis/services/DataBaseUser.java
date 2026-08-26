@@ -1,6 +1,7 @@
 package com.ashis.services;
 
 import com.ashis.entities.User;
+import com.ashis.exceptions.AccountNotFoundException;
 import com.ashis.repositories.UserRepository;
 import com.ashis.utils.CustomUserDetail;
 import lombok.NonNull;
@@ -22,7 +23,7 @@ public  class DataBaseUser implements UserDetailsService {
 
         User byUsername = userRepository
                 .findByUsername(username)
-                .orElseThrow(() -> new UsernameNotFoundException("User not found"));
+                .orElseThrow(() -> new AccountNotFoundException("User not Found "));
 
 
         return  new CustomUserDetail(byUsername);

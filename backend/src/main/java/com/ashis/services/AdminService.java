@@ -8,6 +8,7 @@ import com.ashis.entities.Account;
 import com.ashis.entities.Customer;
 import com.ashis.entities.Transactions;
 import com.ashis.entities.User;
+import com.ashis.exceptions.AccountNotFoundException;
 import com.ashis.repositories.AccountRepository;
 import com.ashis.repositories.RegisterRepository;
 import com.ashis.repositories.TransactionRepository;
@@ -39,7 +40,7 @@ public class AdminService {
 
 
         return accountRepository.findByCustomerAccountNo(accountNo)
-                .orElseThrow(()->new RuntimeException("Customer not Found")).getCustomer();
+                .orElseThrow(()->new AccountNotFoundException("Account not Found ")).getCustomer();
 
 
     }
@@ -47,7 +48,7 @@ public class AdminService {
     public CustomerStatusDto changeActiveStatus(CustomerStatusDto customerStatusDto) {
         Account byCustomerAccountNo =
                 accountRepository.findByCustomerAccountNo(customerStatusDto.getAccountNo())
-                        .orElseThrow(()->new RuntimeException("Account not found"));
+                        .orElseThrow(()->new AccountNotFoundException("Account not Found "));
 
         byCustomerAccountNo.setStatus(customerStatusDto.getAccountStatus());
 
@@ -62,7 +63,7 @@ public class AdminService {
         User user = accountRepository
                 .findByCustomerAccountNo(accountDto
                    .getCustomerAccountNo())
-                .orElseThrow(()->new RuntimeException("User not Found")).getCustomer().getUser();
+                .orElseThrow(()->new AccountNotFoundException("Account not Found ")).getCustomer().getUser();
 
         user.setPassword(accountDto.getCustomerPassword());
 
@@ -84,7 +85,7 @@ public class AdminService {
         System.out.println("account no is "+accountDto.getCustomerAccountNo());
 
         Account account = accountRepository.findByCustomerAccountNo(accountDto.getCustomerAccountNo())
-                .orElseThrow(() -> new RuntimeException("Account not Found"));
+                .orElseThrow(() -> new AccountNotFoundException("Account not Found "));
 
 
         account.setStatus(AccountStatus.DELETED);

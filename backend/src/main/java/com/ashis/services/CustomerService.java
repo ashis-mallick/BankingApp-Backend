@@ -4,9 +4,13 @@ import com.ashis.dto.*;
 import com.ashis.entities.Account;
 import com.ashis.entities.Transactions;
 import com.ashis.entities.User;
+import com.ashis.exceptions.AccountNotFoundException;
+import com.ashis.exceptions.CustomerNotFoundException;
+import com.ashis.exceptions.UnauthorizedAccountAccessException;
 import com.ashis.repositories.AccountRepository;
 import com.ashis.repositories.TransactionRepository;
 import com.ashis.repositories.UserRepository;
+import com.ashis.utils.AccountStatus;
 import com.ashis.utils.TransactionType;
 import lombok.AllArgsConstructor;
 import org.springframework.security.core.Authentication;
@@ -36,7 +40,7 @@ public class CustomerService {
         String name = authentication.getName();
 
         return userRepository.findByUsername(name)
-                .orElseThrow(()->new UsernameNotFoundException("User not found"));
+                .orElseThrow(()->new AccountNotFoundException("Account not Found "));
 
     }
 
@@ -46,19 +50,16 @@ public class CustomerService {
         //find customer by account no exist or not
         Account account = accountRepository.findByCustomerAccountNo
                         (transactionDto.getCustomerAccountNo()).
-                orElseThrow(() -> new RuntimeException("Account not Exist"));
+                orElseThrow(() -> new AccountNotFoundException("Account not Found "));
 
         // Get currently logged-in user
         User user = getLoggedInUser();
-
-        System.out.println("USERNAME = " + user.getUsername());
-        System.out.println("CUSTOMER = " + user.getCustomer());
 
         // Check whether this account belongs to the logged-in user
         if (!account.getCustomer().getCustomerId()
                 .equals(user.getCustomer().getCustomerId())) {
 
-            throw new RuntimeException("You cannot deposit into this account");
+            throw new UnauthorizedAccountAccessException("You are not Authorized ");
         }
 
         List<Transactions> transactions = transactionRepository.findByCustomer(account.getCustomer());
@@ -67,46 +68,59 @@ public class CustomerService {
 
         Transactions deposite = new Transactions();
 
-        if(transactions.isEmpty()){
-            deposite.setAmount(transactionDto.getAmount());
-            account.setTotalAmount(transactionDto.getAmount()); //added to account
-            deposite.setDescription("INITIAL DEPOSIT");
-            deposite.setStatus("SUCCESS");
+        if(account.getStatus().equals(AccountStatus.ACTIVE)){
+            if(transactions.isEmpty()){
+                deposite.setAmount(transactionDto.getAmount());
+                account.setTotalAmount(transactionDto.getAmount()); //added to account
+                deposite.setDescription("INITIAL DEPOSIT");
+                deposite.setStatus("SUCCESS");
 
-            deposite.setTransactionId(generateTransationId());
-            deposite.setCustomer(account.getCustomer());
-            deposite.setTransactionType(TransactionType.DEPOSIT);
+                deposite.setTransactionId(generateTransationId());
+                deposite.setCustomer(account.getCustomer());
+                deposite.setTransactionType(TransactionType.DEPOSIT);
 
-            Transactions savedCreditTransaction = transactionRepository.save(deposite);
-            accountRepository.save(account);
+                Transactions savedCreditTransaction = transactionRepository.save(deposite);
+                accountRepository.save(account);
+                return new TransactionResponseDto(
+                        account.getCustomerAccountNo()
+                        ,savedCreditTransaction.getCustomer().getCustomerFirstName()+" "+savedCreditTransaction.getCustomer().getCustomerLastName(),
+                        savedCreditTransaction.getTransactionId(),
+                        "Amount Credited Successfully",
+                        account.getTotalAmount());
+
+            } else{
+
+                deposite.setAmount(transactionDto.getAmount());
+                deposite.setDescription(transactionDto.getTransactionDescription());
+                deposite.setTransactionType(TransactionType.DEPOSIT);
+                deposite.setTransactionId(generateTransationId());
+                deposite.setCustomer(account.getCustomer());
+                deposite.setStatus("SUCCESS");
+
+
+                Transactions savedCreditTransaction= transactionRepository.save(deposite);
+                account.setTotalAmount(account.getTotalAmount().add(transactionDto.getAmount()));
+                accountRepository.save(account);
+
+                return new TransactionResponseDto(
+                        account.getCustomerAccountNo()
+                        ,savedCreditTransaction.getCustomer().getCustomerFirstName()+" "+savedCreditTransaction.getCustomer().getCustomerLastName(),
+                        savedCreditTransaction.getTransactionId(),
+                        "Amount Credited Successfully",
+                        account.getTotalAmount());
+            }
+
+        }else {
+
             return new TransactionResponseDto(
                     account.getCustomerAccountNo()
-                    ,savedCreditTransaction.getCustomer().getCustomerFirstName()+" "+savedCreditTransaction.getCustomer().getCustomerLastName(),
-                    savedCreditTransaction.getTransactionId(),
-                    "Amount Credited Successfully",
+                    ,account.getCustomer().getCustomerFirstName()+" "+account.getCustomer().getCustomerLastName(),
+                    "Not created ",
+                    "Can not credit ! Account not Active  ",
                     account.getTotalAmount());
 
-        } else{
-
-            deposite.setAmount(transactionDto.getAmount());
-            deposite.setDescription(transactionDto.getTransactionDescription());
-            deposite.setTransactionType(TransactionType.DEPOSIT);
-            deposite.setTransactionId(generateTransationId());
-            deposite.setCustomer(account.getCustomer());
-            deposite.setStatus("SUCCESS");
-
-
-            Transactions savedCreditTransaction= transactionRepository.save(deposite);
-            account.setTotalAmount(account.getTotalAmount().add(transactionDto.getAmount()));
-            accountRepository.save(account);
-
-            return new TransactionResponseDto(
-                    account.getCustomerAccountNo()
-                    ,savedCreditTransaction.getCustomer().getCustomerFirstName()+" "+savedCreditTransaction.getCustomer().getCustomerLastName(),
-                    savedCreditTransaction.getTransactionId(),
-                    "Amount Credited Successfully",
-                    account.getTotalAmount());
         }
+
 
 
     }
@@ -123,7 +137,7 @@ public class CustomerService {
         //find if customer exist or not
         Account account = accountRepository.findByCustomerAccountNo
                 (transactionDto.getCustomerAccountNo()).
-                orElseThrow(() -> new RuntimeException("Account not Exist"));
+                orElseThrow(() -> new AccountNotFoundException("Account not Found "));
 
 
         // Get currently logged-in user
@@ -133,7 +147,7 @@ public class CustomerService {
         if (!account.getCustomer().getCustomerId()
                 .equals(user.getCustomer().getCustomerId())) {
 
-            throw new RuntimeException("You cannot withdraw from this account");
+            throw new UnauthorizedAccountAccessException("You are not Authorized ");
         }
 
 
@@ -141,46 +155,61 @@ public class CustomerService {
 
         Transactions withdrawal = new Transactions();
 
-        if(account.getTotalAmount().compareTo(transactionDto.getAmount())<0){
-            withdrawal.setCustomer(account.getCustomer());
-            withdrawal.setTransactionId(generateTransationId());
-            withdrawal.setTransactionType(TransactionType.WITHDRAW);
-            withdrawal.setDescription("Withdrawal");
-            withdrawal.setStatus("FAILED");
+        if(account.getStatus().equals(AccountStatus.ACTIVE)){
 
-            Transactions savedDebitTransaction=transactionRepository.save(withdrawal);
+            if(account.getTotalAmount().compareTo(transactionDto.getAmount())<0 ){
+                withdrawal.setCustomer(account.getCustomer());
+                withdrawal.setTransactionId(generateTransationId());
+                withdrawal.setTransactionType(TransactionType.WITHDRAW);
+                withdrawal.setDescription("Withdrawal");
+                withdrawal.setStatus("FAILED");
+
+                Transactions savedDebitTransaction=transactionRepository.save(withdrawal);
 //            account.setTotalAmount(account.getTotalAmount().subtract(transactionDto.getAmount()));
 
 
-            return new TransactionResponseDto(
-                    transactionDto.getCustomerAccountNo()
-                    ,savedDebitTransaction.getCustomer().getCustomerFirstName()+" "+savedDebitTransaction.getCustomer().getCustomerLastName(),
-                    savedDebitTransaction.getTransactionId(),
-                    "Amount Withdrawal Failed",
-                    account.getTotalAmount());
+                return new TransactionResponseDto(
+                        transactionDto.getCustomerAccountNo()
+                        ,savedDebitTransaction.getCustomer().getCustomerFirstName()+" "+savedDebitTransaction.getCustomer().getCustomerLastName(),
+                        savedDebitTransaction.getTransactionId(),
+                        "Amount Withdrawal Failed",
+                        account.getTotalAmount());
 
 
+
+            }else {
+                withdrawal.setCustomer(account.getCustomer());
+                withdrawal.setAmount(transactionDto.getAmount());
+                withdrawal.setTransactionId(generateTransationId());
+                withdrawal.setTransactionType(TransactionType.WITHDRAW);
+                withdrawal.setDescription("Withdrawal");
+                withdrawal.setStatus("SUCCESS");
+
+                Transactions savedDebitTransaction=transactionRepository.save(withdrawal);
+                account.setTotalAmount(account.getTotalAmount().subtract(transactionDto.getAmount()));
+                accountRepository.save(account);
+
+                return new TransactionResponseDto(
+                        transactionDto.getCustomerAccountNo()
+                        ,savedDebitTransaction.getCustomer().getCustomerFirstName()+" "+savedDebitTransaction.getCustomer().getCustomerLastName(),
+                        savedDebitTransaction.getTransactionId(),
+                        "Amount Withdrawal Successful",
+                        account.getTotalAmount());
+
+            }
 
         }else {
-            withdrawal.setCustomer(account.getCustomer());
-            withdrawal.setAmount(transactionDto.getAmount());
-            withdrawal.setTransactionId(generateTransationId());
-            withdrawal.setTransactionType(TransactionType.WITHDRAW);
-            withdrawal.setDescription("Withdrawal");
-            withdrawal.setStatus("SUCCESS");
-
-            Transactions savedDebitTransaction=transactionRepository.save(withdrawal);
-            account.setTotalAmount(account.getTotalAmount().subtract(transactionDto.getAmount()));
-            accountRepository.save(account);
 
             return new TransactionResponseDto(
-                    transactionDto.getCustomerAccountNo()
-                    ,savedDebitTransaction.getCustomer().getCustomerFirstName()+" "+savedDebitTransaction.getCustomer().getCustomerLastName(),
-                    savedDebitTransaction.getTransactionId(),
-                    "Amount Withdrawal Successful",
+                    account.getCustomerAccountNo()
+                    ,account.getCustomer().getCustomerFirstName()+" "+account.getCustomer().getCustomerLastName(),
+                    "Not created ",
+                    "Can not withdraw ! Account not Active  ",
                     account.getTotalAmount());
 
+
         }
+
 
 
     }
@@ -190,7 +219,7 @@ public class CustomerService {
 
         Account account = accountRepository.findByCustomerAccountNo
                         (accountDto.getCustomerAccountNo())
-                .orElseThrow(() -> new RuntimeException("Account not exist"));
+                .orElseThrow(() -> new AccountNotFoundException("Account not exist"));
 
 
         // Get currently logged-in user
@@ -200,7 +229,7 @@ public class CustomerService {
         if (!account.getCustomer().getCustomerId()
                 .equals(user.getCustomer().getCustomerId())) {
 
-            throw new RuntimeException("You cannot access  this account");
+            throw new UnauthorizedAccountAccessException("You are not Authorized ");
         }
 
 
@@ -210,7 +239,7 @@ public class CustomerService {
     public List<StatementDto> checkStatement(TransactionDto transactionDto) {
         Account account = accountRepository.findByCustomerAccountNo
                         (transactionDto.getCustomerAccountNo())
-                .orElseThrow(() -> new RuntimeException("Account not found"));
+                .orElseThrow(() -> new AccountNotFoundException("Account not Found "));
 
 
         // Get currently logged-in user
@@ -220,7 +249,7 @@ public class CustomerService {
         if (!account.getCustomer().getCustomerId()
                 .equals(user.getCustomer().getCustomerId())) {
 
-            throw new RuntimeException("You cannot access this account");
+            throw new UnauthorizedAccountAccessException("You are not Authorized ");
         }
 
         List<Transactions> transactions = transactionRepository.findByCustomer(account.getCustomer());
@@ -247,7 +276,7 @@ public class CustomerService {
 
         Account senderAccount = accountRepository.findByCustomerAccountNo
                 (transferBalanceDto.getSenderAccountNo()).orElseThrow(() ->
-                new RuntimeException("Sender doesn't exist"));
+                new AccountNotFoundException("Sender not exist"));
 
 
         // Get currently logged-in user
@@ -257,43 +286,75 @@ public class CustomerService {
         if (!senderAccount.getCustomer().getCustomerId()
                 .equals(user.getCustomer().getCustomerId())) {
 
-            throw new RuntimeException("you cannot transfer from this account");
+            throw new UnauthorizedAccountAccessException("You are not Authorized ");
         }
         Account receiverAccount = accountRepository.findByCustomerAccountNo
                 (transferBalanceDto.getReceiverAccountNo()).orElseThrow(() ->
-                new RuntimeException("Receiver doesn't exist"));
+                new CustomerNotFoundException("Receiver not found"));
 
-        if(senderAccount.getTotalAmount().compareTo(transferBalanceDto.getAmount())>=0){
-            Transactions sendAmount= new Transactions();
+        if(senderAccount.getStatus().equals(AccountStatus.ACTIVE)){
+            if(senderAccount.getTotalAmount().compareTo(transferBalanceDto.getAmount())>=0){
+                Transactions sendAmount= new Transactions();
 
-            sendAmount.setAmount(transferBalanceDto.getAmount());
-            sendAmount.setCustomer(receiverAccount.getCustomer());
-            sendAmount.setTransactionId(generateTransationId());
-            sendAmount.setDescription(transferBalanceDto.getDescription());
-            sendAmount.setStatus("SUCCESS");
-            sendAmount.setTransactionType(TransactionType.TRANSFER);
-
-
-            Transactions sent = transactionRepository.save(sendAmount);
-
-            // added amount to receiver account
-            receiverAccount.setTotalAmount(receiverAccount.getTotalAmount().add(transferBalanceDto.getAmount()));
-            accountRepository.save(receiverAccount);
-
-            // deduct amount from sender account
-            senderAccount.setTotalAmount(senderAccount.getTotalAmount().subtract(transferBalanceDto.getAmount()));
-            accountRepository.save(senderAccount);
+                sendAmount.setAmount(transferBalanceDto.getAmount());
+                sendAmount.setCustomer(receiverAccount.getCustomer());
+                sendAmount.setTransactionId(generateTransationId());
+                sendAmount.setDescription(transferBalanceDto.getDescription());
+                sendAmount.setStatus("SUCCESS");
+                sendAmount.setTransactionType(TransactionType.TRANSFER);
 
 
-            return new TransferResponseDto(
-                    transferBalanceDto.getSenderAccountNo(),
-                    transferBalanceDto.getReceiverAccountNo(),
-                    transferBalanceDto.getAmount(),
-                    transferBalanceDto.getDescription(),
-                    sent.getStatus(),
-                    LocalDate.now()
+                Transactions sent = transactionRepository.save(sendAmount);
 
-            );
+                // added amount to receiver account
+                receiverAccount.setTotalAmount(receiverAccount.getTotalAmount().add(transferBalanceDto.getAmount()));
+                accountRepository.save(receiverAccount);
+
+                // deduct amount from sender account
+                senderAccount.setTotalAmount(senderAccount.getTotalAmount().subtract(transferBalanceDto.getAmount()));
+                accountRepository.save(senderAccount);
+
+
+                return new TransferResponseDto(
+                        transferBalanceDto.getSenderAccountNo(),
+                        transferBalanceDto.getReceiverAccountNo(),
+                        transferBalanceDto.getAmount(),
+                        transferBalanceDto.getDescription(),
+                        sent.getStatus(),
+                        LocalDate.now()
+
+                );
+
+
+
+
+
+
+            }else {
+                Transactions sendAmount= new Transactions();
+
+                sendAmount.setAmount(transferBalanceDto.getAmount());
+                sendAmount.setCustomer(receiverAccount.getCustomer());
+                sendAmount.setTransactionId(generateTransationId());
+                sendAmount.setDescription(transferBalanceDto.getDescription());
+                sendAmount.setStatus("FAILED");
+                sendAmount.setTransactionType(TransactionType.TRANSFER);
+
+
+
+                Transactions sent = transactionRepository.save(sendAmount);
+
+                return new TransferResponseDto(
+                        transferBalanceDto.getSenderAccountNo(),
+                        transferBalanceDto.getReceiverAccountNo(),
+                        transferBalanceDto.getAmount(),
+                        transferBalanceDto.getDescription(),
+                        sent.getStatus(),
+                        LocalDate.now()
+
+                );
+
+        }
 
 
 
@@ -301,27 +362,15 @@ public class CustomerService {
 
 
         }else {
-            Transactions sendAmount= new Transactions();
-
-            sendAmount.setAmount(transferBalanceDto.getAmount());
-            sendAmount.setCustomer(receiverAccount.getCustomer());
-            sendAmount.setTransactionId(generateTransationId());
-            sendAmount.setDescription(transferBalanceDto.getDescription());
-            sendAmount.setStatus("FAILED");
-            sendAmount.setTransactionType(TransactionType.TRANSFER);
-
-            Transactions sent = transactionRepository.save(sendAmount);
-
             return new TransferResponseDto(
                     transferBalanceDto.getSenderAccountNo(),
                     transferBalanceDto.getReceiverAccountNo(),
                     transferBalanceDto.getAmount(),
-                    transferBalanceDto.getDescription(),
-                    sent.getStatus(),
+                    "Account not Active ",
+                    "Fund Transfer Failed ! ",
                     LocalDate.now()
 
             );
-
 
 
 
