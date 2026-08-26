@@ -2,14 +2,15 @@ package com.ashis.controllers;
 
 import com.ashis.dto.*;
 import com.ashis.services.CustomerService;
-import lombok.AllArgsConstructor;
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
 @RestController
 @RequestMapping("/banking")
-@AllArgsConstructor
+@RequiredArgsConstructor
 public class CustomerController {
 
     private final CustomerService customerService;
@@ -17,7 +18,7 @@ public class CustomerController {
 
 
     @PostMapping("/credit")
-    public TransactionResponseDto depositeAmount(@RequestBody TransactionDto transactionDto){
+    public TransactionResponseDto depositeAmount( @Valid @RequestBody TransactionDto transactionDto){
 
        return customerService.depositeAmount(transactionDto);
 
@@ -25,23 +26,23 @@ public class CustomerController {
     }
 
     @PostMapping("/debit")
-    public TransactionResponseDto withdrawAmount(@RequestBody TransactionDto transactionDto){
+    public TransactionResponseDto withdrawAmount(@Valid @RequestBody TransactionDto transactionDto){
         return customerService.withdrawAmount(transactionDto);
 
     }
 
-    @GetMapping("/check")
-    public AccountBalanceRespnse checkBalance(@RequestBody AccountDto accountDto){
+    @PostMapping("/check")
+    public AccountBalanceRespnse checkBalance( @Valid @RequestBody AccountDto accountDto){
         return  customerService.checkBalance(accountDto);
     }
 
     @PostMapping("/statement")
-    public List<StatementDto> checkStatement(@RequestBody TransactionDto transactionDto){
+    public List<StatementDto> checkStatement(@Valid @RequestBody TransactionDto transactionDto){
         return customerService.checkStatement(transactionDto);
     }
 
     @PostMapping("/transfer")
-    public TransferResponseDto transferBalance(@RequestBody TransferBalanceDto transferBalanceDto){
+    public TransferResponseDto transferBalance( @Valid @RequestBody TransferBalanceDto transferBalanceDto){
         return customerService.transferBalance(transferBalanceDto);
 
     }

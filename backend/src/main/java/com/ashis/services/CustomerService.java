@@ -3,10 +3,15 @@ package com.ashis.services;
 import com.ashis.dto.*;
 import com.ashis.entities.Account;
 import com.ashis.entities.Transactions;
+import com.ashis.entities.User;
 import com.ashis.repositories.AccountRepository;
 import com.ashis.repositories.TransactionRepository;
+import com.ashis.repositories.UserRepository;
 import com.ashis.utils.TransactionType;
 import lombok.AllArgsConstructor;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
@@ -21,6 +26,19 @@ public class CustomerService {
 
     private final TransactionRepository transactionRepository;
     private final AccountRepository accountRepository;
+    private final UserRepository userRepository;
+
+    private User getLoggedInUser(){
+
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+
+        assert authentication != null;
+        String name = authentication.getName();
+
+        return userRepository.findByUsername(name)
+                .orElseThrow(()->new UsernameNotFoundException("User not found"));
+
+    }
 
     public TransactionResponseDto depositeAmount(TransactionDto transactionDto){
 
@@ -30,7 +48,22 @@ public class CustomerService {
                         (transactionDto.getCustomerAccountNo()).
                 orElseThrow(() -> new RuntimeException("Account not Exist"));
 
+        // Get currently logged-in user
+        User user = getLoggedInUser();
+
+        System.out.println("USERNAME = " + user.getUsername());
+        System.out.println("CUSTOMER = " + user.getCustomer());
+
+        // Check whether this account belongs to the logged-in user
+        if (!account.getCustomer().getCustomerId()
+                .equals(user.getCustomer().getCustomerId())) {
+
+            throw new RuntimeException("You cannot deposit into this account");
+        }
+
         List<Transactions> transactions = transactionRepository.findByCustomer(account.getCustomer());
+
+
 
         Transactions deposite = new Transactions();
 
@@ -93,7 +126,18 @@ public class CustomerService {
                 orElseThrow(() -> new RuntimeException("Account not Exist"));
 
 
-        List<Transactions> transactions = transactionRepository.findByCustomer(account.getCustomer());
+        // Get currently logged-in user
+        User user = getLoggedInUser();
+
+        // Check whether this account belongs to the logged-in user
+        if (!account.getCustomer().getCustomerId()
+                .equals(user.getCustomer().getCustomerId())) {
+
+            throw new RuntimeException("You cannot withdraw from this account");
+        }
+
+
+
 
         Transactions withdrawal = new Transactions();
 
@@ -149,6 +193,17 @@ public class CustomerService {
                 .orElseThrow(() -> new RuntimeException("Account not exist"));
 
 
+        // Get currently logged-in user
+        User user = getLoggedInUser();
+
+        // Check whether this account belongs to the logged-in user
+        if (!account.getCustomer().getCustomerId()
+                .equals(user.getCustomer().getCustomerId())) {
+
+            throw new RuntimeException("You cannot access  this account");
+        }
+
+
         return new AccountBalanceRespnse(accountDto.getCustomerAccountNo(),account.getTotalAmount(), LocalDate.now());
     }
 
@@ -156,6 +211,18 @@ public class CustomerService {
         Account account = accountRepository.findByCustomerAccountNo
                         (transactionDto.getCustomerAccountNo())
                 .orElseThrow(() -> new RuntimeException("Account not found"));
+
+
+        // Get currently logged-in user
+        User user = getLoggedInUser();
+
+        // Check whether this account belongs to the logged-in user
+        if (!account.getCustomer().getCustomerId()
+                .equals(user.getCustomer().getCustomerId())) {
+
+            throw new RuntimeException("You cannot access this account");
+        }
+
         List<Transactions> transactions = transactionRepository.findByCustomer(account.getCustomer());
 
         List<StatementDto> statementList = transactions.stream().map(t ->
@@ -181,6 +248,17 @@ public class CustomerService {
         Account senderAccount = accountRepository.findByCustomerAccountNo
                 (transferBalanceDto.getSenderAccountNo()).orElseThrow(() ->
                 new RuntimeException("Sender doesn't exist"));
+
+
+        // Get currently logged-in user
+        User user = getLoggedInUser();
+
+        // Check whether this account belongs to the logged-in user
+        if (!senderAccount.getCustomer().getCustomerId()
+                .equals(user.getCustomer().getCustomerId())) {
+
+            throw new RuntimeException("you cannot transfer from this account");
+        }
         Account receiverAccount = accountRepository.findByCustomerAccountNo
                 (transferBalanceDto.getReceiverAccountNo()).orElseThrow(() ->
                 new RuntimeException("Receiver doesn't exist"));

@@ -3,6 +3,7 @@ package com.ashis.controllers;
 import com.ashis.dto.RegisterDto;
 import com.ashis.dto.RegisterResponseDto;
 import com.ashis.services.AuthService;
+import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -20,8 +21,7 @@ public class AuthController {
 
 
     @PostMapping("/register")
-    @CrossOrigin(origins = "http://localhost:5173")
-    public RegisterResponseDto openRegisterPage(@RequestBody RegisterDto registerDto){
+    public RegisterResponseDto openRegisterPage( @Valid @RequestBody RegisterDto registerDto){
 
              return authService.saveRegisterData(registerDto);
 
